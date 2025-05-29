@@ -1,0 +1,643 @@
+{% extends "knowledge_graph/base.html" %}
+{% load static %}
+
+{% block title %}知识图谱问答 - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+    {{ block.super }}
+    <style>
+        #knowledgeGraphContainer {
+            position: relative;
+            min-height: 550px; /* Minimum height for the container */
+            background-color: #ffffff; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            padding: 15px; 
+            margin-top: 20px; 
+            margin-bottom: 20px; /* Added margin at bottom */
+            width: 100%; /* Ensure it takes full width of its parent */
+        }
+        #knowledgeGraph {
+            width: 100%;
+            height: 550px; /* Explicit height for the graph div itself */
+            border-radius: 5px;
+        }
+        #knowledgeGraphLoading {
+            position: absolute;
+            top: 10px; /* Position from the top */
+            left: 10px; /* Position from the left */
+            /* Removed right and bottom to make it size based on content */
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly more opaque */
+            z-index: 10;
+            display: none; /* Initially hidden, will be set to 'flex' by JS when loading */
+            flex-direction: row; /* Align spinner and text horizontally */
+            align-items: center; /* Center items vertically */
+            padding: 5px 10px; /* Add some padding */
+            border-radius: 5px; /* Rounded corners for the small box */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+        }
+        /* Optional: Adjust spinner size if needed */
+        #knowledgeGraphLoading .spinner-border {
+            width: 1rem;
+            height: 1rem;
+            border-width: .2em;
+            margin-right: 8px; /* Space between spinner and text */
+        }
+        #knowledgeGraphLoading p {
+            margin-bottom: 0; /* Remove default paragraph margin */
+            font-size: 0.85rem; /* Smaller font size for the text */
+        }
+        #answerDisplay { /* 新增：用于显示AI回答的区域 */
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        #answerDisplay .spinner-container { /* Changed selector for spinner */
+            display: none; 
+            align-items: center; /* For d-flex to align spinner and text */
+            flex-direction: row !important; /* Ensure horizontal layout */
+        }
+        #answerDisplay .spinner-container .spinner-border {
+             margin-right: 10px;
+        }
+        /* 新增KB结果展示区域的样式 */
+        .kb-results-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+        /* Chat message styling */
+        #answerContent {
+            max-height: 400px; /* Or any height you prefer */
+            overflow-y: auto; /* Enable vertical scrolling */
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+        }
+        .chat-message {
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border-radius: 18px;
+            max-width: 75%;
+            clear: both; 
+            line-height: 1.4;
+        }
+        .user-message {
+            background-color: #007bff; 
+            color: white;
+            float: right; 
+            margin-left: auto; 
+            text-align: left; /* Content usually left aligned even if bubble is right */
+            border-bottom-right-radius: 5px;
+        }
+        .assistant-message {
+            background-color: #e9ecef; 
+            color: #333;
+            float: left; 
+            margin-right: auto; 
+            text-align: left;
+            border-bottom-left-radius: 5px;
+        }
+        .chat-message p:first-child { 
+            margin-bottom: 0.2rem;
+            font-size: 0.75em;
+            color: inherit; /* Will inherit from user/assistant message color */
+            opacity: 0.8;
+        }
+        .user-message p:first-child {
+            color: #f0f0f0;
+        }
+        .assistant-message p:first-child {
+            color: #555;
+        }
+        .chat-message p:last-child { 
+            margin-bottom: 0;
+        }
+        #answerContent::after { /* Clearfix for floated elements */
+            content: "";
+            clear: both;
+            display: table;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="qa-container mt-4">
+    <h2 class="section-title">智能问答助手</h2>
+    <form id="qaForm" class="mb-4">
+        {% csrf_token %} {# CSRF token for POST request #}
+                <div class="input-group">
+            <input type="text" id="userQueryInput" name="q" class="form-control form-control-lg" placeholder="请输入您的问题..." value="{{ query|default:'' }}">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary btn-lg" type="submit">提问</button>
+                    </div>
+                </div>
+            </form>
+
+    {# AI回答显示区域 #}
+    <div id="answerDisplay" style="display: none;">
+        <div class="spinner-container d-flex align-items-center"> {# Added d-flex here #}
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">正在思考...</span>
+            </div>
+            <strong>AI助手正在思考...</strong>
+        </div>
+        <div id="answerContent" class="mt-2"></div>
+    </div>
+
+    {# 知识库搜索结果显示区域 (新增HTML结构) #}
+    <div id="knowledgeBaseResultsContainer" class="kb-results-section" style="display: none;">
+        <h4 class="section-title-sm">知识库相关信息</h4>
+        <div id="kbAnswerItemDisplay" class="answer-box"></div>
+        <div id="kbSearchResultsDisplay" class="mt-3"></div>
+        <div id="noKbResultDisplay" class="alert alert-info" style="display: none;">知识库中暂未找到与此查询直接相关的内容。</div>
+                    </div>
+                    
+    {# 学习笔记中匹配结果 (这部分逻辑在home视图中，如果home视图不再被GET q参数直接调用，需要重新考虑如何触发) #}
+    {# 为简化，暂时保留，但其数据源需要确认 #}
+    {% if matching_study_notes %}
+        <div class="matching-notes mt-5 kb-results-section">
+            <h4 class="section-title">在你的学习笔记中找到相关内容:</h4>
+            <ul class="list-group">
+                {% for note in matching_study_notes %}
+                    <li class="list-group-item">
+                        <a href="{% url 'study_note_detail' pk=note.pk %}">{{ note.title }}</a>
+                        {% if note.is_public %}
+                            <span class="badge bg-success ms-1">公开</span>
+                        {% else %}
+                            <span class="badge bg-secondary ms-1">私有</span> {# 理论上这里只会是公开笔记，根据视图逻辑 #}
+                        {% endif %}
+                        <p class="mb-0 mt-1 text-muted"><small>{{ note.content|striptags|truncatewords:30 }}</small></p>
+                        <small class="text-muted">最后更新: {{ note.updated_at|timesince }}前</small>
+                    </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+    <h3 class="section-title mt-5">知识图谱可视化</h3>
+    <div id="knowledgeGraphContainer" class="kb-results-section">
+        <div id="knowledgeGraphLoading" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">正在加载...</span>
+            </div>
+            <p class="mt-2">正在加载图谱...</p>
+        </div>
+        <div id="knowledgeGraph"></div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+    {{ block.super }}
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const qaForm = document.getElementById('qaForm');
+            const userQueryInput = document.getElementById('userQueryInput');
+            
+            const answerDisplay = document.getElementById('answerDisplay');
+            const answerContent = document.getElementById('answerContent'); // This will now hold the conversation
+            const answerSpinnerContainer = answerDisplay ? answerDisplay.querySelector('.spinner-container') : null;
+            
+            const kbResultsContainer = document.getElementById('knowledgeBaseResultsContainer');
+            const kbAnswerItemDisplay = document.getElementById('kbAnswerItemDisplay');
+            const kbSearchResultsDisplay = document.getElementById('kbSearchResultsDisplay');
+            const noKbResultDisplay = document.getElementById('noKbResultDisplay');
+
+            const knowledgeGraphContainer = document.getElementById('knowledgeGraphContainer');
+            const graphLoadingDiv = document.getElementById('knowledgeGraphLoading');
+            const graphDiv = document.getElementById('knowledgeGraph');
+            let visNetwork = null;
+
+            let conversationHistory = []; // Initialize conversation history
+            let currentAssistantMessageDiv = null; // To hold the div for the current assistant message being streamed
+
+            // Configure marked.js options once
+            if (typeof marked !== 'undefined') {
+                marked.setOptions({
+                    gfm: true,        // Enable GitHub Flavored Markdown
+                    breaks: true,     // Treat newlines in Markdown as <br> tags
+                    // sanitize: false, // Deprecated. For security, use a dedicated library like DOMPurify if untrusted HTML is possible.
+                });
+            }
+
+            const csrfTokenInput = qaForm ? qaForm.querySelector('[name=csrfmiddlewaretoken]') : null;
+            const csrfToken = csrfTokenInput ? csrfTokenInput.value : null;
+            if (!csrfToken) {
+                console.error('CSRF token not found!');
+            }
+
+            function escapeHTML(str) {
+                return str.replace(/[&<>'"/]/g, function (s) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;',
+                        '/': '&#x2F;'
+                    }[s] || s;
+                });
+            }
+
+            function appendMessageToChat(role, contentChunk, isStreamChunk = false, isFinalChunk = false) {
+                if (!answerContent) return;
+
+                if (role === 'assistant') {
+                    if (!currentAssistantMessageDiv) {
+                        currentAssistantMessageDiv = document.createElement('div');
+                        currentAssistantMessageDiv.classList.add('chat-message', 'assistant-message');
+                        currentAssistantMessageDiv.dataset.rawContent = ""; 
+                        currentAssistantMessageDiv.innerHTML = `<p class="chat-role-label"><strong>AI助手:</strong></p><div class="assistant-reply-rendered-content" style="min-height: 1em;"></div>`;
+                        answerContent.appendChild(currentAssistantMessageDiv);
+                    }
+
+                    const renderedContentDiv = currentAssistantMessageDiv.querySelector('.assistant-reply-rendered-content');
+                    if (!renderedContentDiv) {
+                        console.error("Critical: .assistant-reply-rendered-content div not found inside currentAssistantMessageDiv!");
+                        if (isFinalChunk) currentAssistantMessageDiv = null; 
+                        return; 
+                    }
+
+                    if (isStreamChunk && typeof contentChunk === 'string') {
+                        currentAssistantMessageDiv.dataset.rawContent += contentChunk;
+                    }
+                    
+                    try {
+                        renderedContentDiv.innerHTML = marked.parse(currentAssistantMessageDiv.dataset.rawContent || '');
+                    } catch (e) {
+                        console.error("Error parsing Markdown: ", e, "Raw content:", currentAssistantMessageDiv.dataset.rawContent);
+                        renderedContentDiv.textContent = currentAssistantMessageDiv.dataset.rawContent || ''; 
+                    }
+                    
+                    if (isFinalChunk) {
+                        if (currentAssistantMessageDiv && currentAssistantMessageDiv.dataset.rawContent === "") {
+                            // renderedContentDiv.innerHTML = "<i>(AI助手没有返回内容)</i>";
+                        }
+                        currentAssistantMessageDiv = null;
+                    }
+                } else if (role === 'user') { 
+                     const messageDiv = document.createElement('div');
+                     messageDiv.classList.add('chat-message', 'user-message');
+                     const formattedUserContent = escapeHTML(contentChunk || "").replace(/\n/g, '<br>');
+                     messageDiv.innerHTML = `<p class="chat-role-label"><strong>你:</strong></p><p>${formattedUserContent}</p>`;
+                     answerContent.appendChild(messageDiv);
+                     if (currentAssistantMessageDiv) { 
+                         currentAssistantMessageDiv = null;
+                     }
+                } else if (role === 'system') { 
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('chat-message', 'system-message'); 
+                    messageDiv.innerHTML = `<p><strong>系统:</strong></p><p>${escapeHTML(contentChunk)}</p>`;
+                    answerContent.appendChild(messageDiv);
+                } else { // Fallback for any other unhandled role
+                     const messageDiv = document.createElement('div');
+                     messageDiv.classList.add('chat-message');
+                     messageDiv.innerHTML = `<p><strong>${escapeHTML(role)}:</strong></p><p>${escapeHTML(contentChunk)}</p>`;
+                     answerContent.appendChild(messageDiv);
+                }
+                
+                answerContent.scrollTop = answerContent.scrollHeight; 
+            }
+
+            function initOrUpdateGraph(nodesData, edgesData) {
+                if (!graphDiv) {
+                    console.error("Knowledge graph div not found!");
+                    return;
+                }
+                if (graphLoadingDiv) graphLoadingDiv.style.display = 'flex';
+
+                const nodes = new vis.DataSet(nodesData);
+                const edges = new vis.DataSet(edgesData);
+                const data = { nodes: nodes, edges: edges };
+                const options = {
+                    layout: { hierarchical: false, improvedLayout: true },
+                    interaction: { hover: true, tooltipDelay: 200, navigationButtons: true, keyboard: true, dragNodes: true, dragView: true, zoomView: true },
+                    physics: {
+                        enabled: true,
+                        barnesHut: { gravitationalConstant: -5000, centralGravity: 0.15, springLength: 150, springConstant: 0.05, damping: 0.15, avoidOverlap: 0.5 },
+                        maxVelocity: 70, minVelocity: 0.5, solver: 'barnesHut',
+                        stabilization: { enabled: true, iterations: 1000, updateInterval: 25, onlyDynamicEdges: false, fit: true },
+                        adaptiveTimestep: true
+                    },
+                    nodes: { borderWidth: 1, borderWidthSelected: 2, font: { size: 14, face: 'Roboto, Arial, sans-serif', strokeWidth: 0 }, shapeProperties: { interpolation: false } },
+                    edges: {
+                        width: 1.5, font: { size: 11, align: 'middle', strokeWidth: 3, strokeColor: 'rgba(255,255,255,0.8)' },
+                        color: { color: '#848484', highlight: '#007bff', hover: '#20c997', inherit: false, opacity: 0.8 },
+                        arrows: { to: { enabled: true, scaleFactor: 0.7, type: 'arrow' } },
+                        smooth: { enabled: true, type: "continuous", roundness: 0.3 }
+                    },
+                    groups: {
+                        category: { color: { background: '#FFC107', border: '#FF9800', highlight: { background: '#FFA000', border: '#FF6F00' } }, shape: 'box', font: { color: '#333333', size: 15 } },
+                        knowledge_point: { color: { background: '#4CAF50', border: '#388E3C', highlight: { background: '#66BB6A', border: '#2E7D32' } }, shape: 'ellipse' },
+                        center_node: { color: { background:'#007bff', border:'#0056b3', highlight: { background:'#0056b3', border:'#003f7f'} }, size: 30, font: {size: 18, color: '#FFFFFF', strokeWidth: 0}, fixed: false }
+                    }
+                };
+
+                if (visNetwork) {
+                    visNetwork.setData(data);
+                } else {
+                    visNetwork = new vis.Network(graphDiv, data, options);
+                }
+                
+                visNetwork.once("stabilized", function() {
+                    if (graphLoadingDiv) graphLoadingDiv.style.display = 'none';
+                    visNetwork.fit();
+                });
+
+                visNetwork.off('selectNode');
+                visNetwork.on("selectNode", function(params) {
+                    if (params.nodes.length > 0) {
+                        var selectedNodeId = params.nodes[0];
+                        console.log("Node selected:", selectedNodeId);
+                    }
+                });
+
+                // --- BEGIN ADDED CODE for doubleClick to load neighbors ---
+                visNetwork.off('doubleClick'); // Remove previous listener if any
+                visNetwork.on("doubleClick", function(params) {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        console.log("[DEBUG] Node double-clicked. Node ID:", nodeId);
+                        fetchAndAddNeighbors(nodeId);
+                    }
+                });
+                // --- END ADDED CODE ---
+            }
+
+            // --- BEGIN ADDED CODE for fetchAndAddNeighbors function ---
+            async function fetchAndAddNeighbors(nodeId) {
+                console.log("[DEBUG] fetchAndAddNeighbors called with Node ID:", nodeId);
+                if (!visNetwork) {
+                    console.error("visNetwork not initialized.");
+                    return;
+                }
+                if (graphLoadingDiv) graphLoadingDiv.style.display = 'flex';
+
+                try {
+                    const response = await fetch(`/api/node_neighbors/${nodeId}/`);
+                    console.log("[DEBUG] fetchAndAddNeighbors response status:", response.status);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: "Failed to parse error JSON" }));
+                        console.error("[DEBUG] fetchAndAddNeighbors API error response:", errorData);
+                        throw new Error(errorData.error || `Failed to fetch neighbors: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    console.log("[DEBUG] fetchAndAddNeighbors received data:", data);
+
+                    if (data.nodes && data.nodes.length > 0) {
+                        // Filter out nodes that already exist in the graph
+                        const newNodes = data.nodes.filter(node => !visNetwork.body.data.nodes.get(node.id));
+                        if (newNodes.length > 0) {
+                            console.log("[DEBUG] Adding new nodes:", newNodes);
+                            visNetwork.body.data.nodes.add(newNodes);
+                        } else {
+                            console.log("[DEBUG] No new nodes to add from API response.");
+                        }
+                    }
+                    if (data.edges && data.edges.length > 0) {
+                        // Filter out edges that already exist (more complex, an edge is defined by from/to, sometimes also id)
+                        // For simplicity, we'll assume edges are less likely to cause "already exists" if nodes are handled.
+                        // If edge errors persist, a more robust check is needed for edges.
+                        // A simple check: only add edges if both its 'from' and 'to' nodes are now in the graph.
+                        const newEdges = data.edges.filter(edge => {
+                            const fromNodeExists = visNetwork.body.data.nodes.get(edge.from);
+                            const toNodeExists = visNetwork.body.data.nodes.get(edge.to);
+                            // Optional: Check if an edge with the same from/to/label already exists
+                            // This is harder as Vis.js edges might not have a unique ID by default from backend
+                            return fromNodeExists && toNodeExists;
+                        });
+
+                        if (newEdges.length > 0) {
+                            // To prevent "Error: item with id ... already exists" for edges, 
+                            // we can try adding them one by one and catch errors, or ensure backend provides unique edge IDs
+                            // For now, let's try adding all and see if node filtering was enough.
+                            // If edge ID conflicts occur, Vis.js may auto-generate IDs or throw an error.
+                            // A safer way: assign unique IDs to edges on the client or ensure backend does.
+                            // For now, we rely on Vis.js's default behavior for adding edges.
+                            console.log("[DEBUG] Adding new edges:", newEdges);
+                            visNetwork.body.data.edges.add(newEdges);
+                        } else {
+                            console.log("[DEBUG] No new edges to add or their nodes are not in graph.");
+                        }
+                    }
+                    
+                    // Give some time for physics to adjust before hiding loader and fitting
+                    setTimeout(() => {
+                        if (graphLoadingDiv) graphLoadingDiv.style.display = 'none';
+                        // visNetwork.fit(); // Optional: fit after adding new nodes
+                    }, 800);
+
+
+                } catch (error) {
+                    console.error("[DEBUG] Error in fetchAndAddNeighbors:", error);
+                    appendMessageToChat('system', `加载邻居节点失败: ${error.message}`);
+                    if (graphLoadingDiv) graphLoadingDiv.style.display = 'none';
+                } finally {
+                    // Ensure loader is hidden eventually
+                     setTimeout(() => {
+                        if (graphLoadingDiv) graphLoadingDiv.style.display = 'none';
+                    }, 800); // Adjusted from 750 to 800 for consistency
+                }
+            }
+            // --- END ADDED CODE ---
+
+            if (qaForm) {
+                qaForm.addEventListener('submit', async function(event) { 
+                    event.preventDefault(); 
+                    const userQuery = userQueryInput.value.trim();
+
+                    if (!userQuery || !csrfToken) {
+                        // Use the new appendMessageToChat for system messages too, if desired
+                        appendMessageToChat('system', '错误: 输入为空或无法发送请求 (缺少CSRF token)。');
+                        return;
+                    }
+                    
+                    conversationHistory.push({ role: 'user', content: userQuery });
+                    appendMessageToChat('user', userQuery);
+                    userQueryInput.value = ''; 
+
+                    if(answerDisplay && !answerDisplay.classList.contains('active-chat')) {
+                         answerDisplay.style.display = 'block'; 
+                         answerDisplay.classList.add('active-chat'); 
+                    }
+                    if(answerSpinnerContainer) answerSpinnerContainer.style.display = 'flex';
+                    
+                    if(kbResultsContainer) kbResultsContainer.style.display = 'none';
+                    if(kbAnswerItemDisplay) kbAnswerItemDisplay.innerHTML = '';
+                    if(kbSearchResultsDisplay) kbSearchResultsDisplay.innerHTML = '';
+                    if(noKbResultDisplay) noKbResultDisplay.style.display = 'none';
+                    if(graphDiv) graphDiv.innerHTML = ''; 
+                    if(graphLoadingDiv) graphLoadingDiv.style.display = 'none';
+                    if(knowledgeGraphContainer) knowledgeGraphContainer.style.display = 'none';
+
+                    let accumulatedAiResponse = ""; // For conversation history
+                    currentAssistantMessageDiv = null; // Reset before new stream starts
+
+                    try {
+                        const aiResponse = await fetch("{% url 'qwen_chat_api' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                                'Accept': 'text/event-stream' // Important for SSE
+                            },
+                            body: JSON.stringify({ messages: conversationHistory })
+                        });
+
+                        if (!aiResponse.ok) {
+                            const errText = await aiResponse.text(); // Try to get error text
+                            throw new Error(errText || `AI API HTTP error! status: ${aiResponse.status}`);
+                        }
+                        
+                        if(answerSpinnerContainer) answerSpinnerContainer.style.display = 'none';
+
+                        const reader = aiResponse.body.getReader();
+                        const decoder = new TextDecoder();
+                        let stillReading = true;
+
+                        // Create the initial assistant message bubble
+                        appendMessageToChat('assistant', '', true, false); 
+
+                        while (stillReading) {
+                            const { done, value } = await reader.read();
+                            if (done) {
+                                stillReading = false;
+                                break;
+                            }
+                            const chunkText = decoder.decode(value);
+                            // console.log("Raw SSE Chunk Text:", chunkText); // DIAGNOSTIC: Keep this off unless debugging stream issues
+
+                            const eventLines = chunkText.split('\\n\\n').filter(line => line.trim() !== '');
+
+                            for (const line of eventLines) {
+                                if (line.startsWith('data: ')) {
+                                    const jsonData = line.substring(5).trim(); // Trim whitespace
+                                    console.log("Attempting to parse SSE JSON data:", jsonData); // Log before parsing
+                                    try {
+                                        // Ensure jsonData is not empty before parsing
+                                        if (jsonData) {
+                                            const parsedData = JSON.parse(jsonData);
+                                            // console.log("Parsed SSE Data:", parsedData); 
+
+                                            if (typeof parsedData.reply_piece === 'string') { 
+                                                accumulatedAiResponse += parsedData.reply_piece;
+                                                appendMessageToChat('assistant', parsedData.reply_piece, true, false); 
+                                            }
+                                            if (parsedData.error) {
+                                                console.error("SSE Error reported by backend:", parsedData.error);
+                                                appendMessageToChat('system', `AI 流式传输错误: ${parsedData.error}`);
+                                                stillReading = false; 
+                                                if(answerSpinnerContainer) answerSpinnerContainer.style.display = 'none'; 
+                                                if(currentAssistantMessageDiv) currentAssistantMessageDiv = null; 
+                                                break;
+                                            }
+                                            if (parsedData.hasOwnProperty('finish_reason')) { 
+                                                console.log("Stream finished event received. Reason:", parsedData.finish_reason);
+                                                stillReading = false; 
+                                                appendMessageToChat('assistant', '', true, true); 
+                                                break; 
+                                            }
+                                        } else {
+                                            console.warn("Received empty jsonData after 'data: ' prefix.");
+                                        }
+                                    } catch (e) {
+                                        console.error("Error parsing SSE JSON data:", e, "Problematic jsonData:", jsonData);
+                                        // Decide if we should stop the stream on a parse error.
+                                        // For now, let's continue, as other valid chunks might follow.
+                                        // If errors persist, it might indicate a systematic issue.
+                                    }
+                                }
+                            }
+                             if (!stillReading) break; 
+                        }
+                        
+                        if (accumulatedAiResponse) { 
+                            conversationHistory.push({ role: 'assistant', content: accumulatedAiResponse });
+                        }
+                        // console.log("Exited SSE reading loop. Final accumulated AI response for history:", accumulatedAiResponse);
+
+                        // KB search and graph update (remains the same)
+                        const kbResponse = await fetch(`{% url 'knowledge_base_search_api' %}?q=${encodeURIComponent(userQuery)}`);
+                        
+                        if (!kbResponse.ok) {
+                            const errData = await kbResponse.json().catch(() => ({}));
+                            throw new Error(errData.error || `KB API HTTP error! status: ${kbResponse.status}`);
+                        }
+                        const kbData = await kbResponse.json();
+                        
+                        if(kbResultsContainer) kbResultsContainer.style.display = 'block';
+                        let kbHasContent = false;
+
+                        if (kbData.answer_item) {
+                            kbHasContent = true;
+                            let contentHtml = '<h6>' + escapeHTML(kbData.answer_item.name_highlighted || kbData.answer_item.name) + '</h6>';
+                            if (kbData.answer_item.content_highlighted || kbData.answer_item.content) {
+                                contentHtml += '<p>' + escapeHTML(kbData.answer_item.content_highlighted || kbData.answer_item.content) + '</p>';
+                            }
+                            if(kbAnswerItemDisplay) kbAnswerItemDisplay.innerHTML = contentHtml;
+                        }
+
+                        if (kbData.search_results && kbData.search_results.length > 0) {
+                            kbHasContent = true;
+                            let resultsHtml = '<h5 class="mt-3">知识库其他相关条目:</h5><ul class="list-group">';
+                            kbData.search_results.forEach(item => {
+                                resultsHtml += `<li class="list-group-item">
+                                    <a href="{% url 'home' %}?q=${encodeURIComponent(item.url_encoded_name)}">${escapeHTML(item.name)}</a> 
+                                    <small class="text-muted">(${escapeHTML(item.item_type_display)})</small>
+                                    ${item.content_summary ? '<p class="mb-0 mt-1 text-muted"><small>' + escapeHTML(item.content_summary) + '</small></p>' : ''}
+                                </li>`;
+                            });
+                            resultsHtml += '</ul>';
+                            if(kbSearchResultsDisplay) kbSearchResultsDisplay.innerHTML = resultsHtml;
+                        }
+                        
+                        if (!kbHasContent && noKbResultDisplay) {
+                            noKbResultDisplay.textContent = `知识库中未找到与 "${escapeHTML(userQuery)}" 直接相关的内容。`;
+                            noKbResultDisplay.style.display = 'block';
+                        }
+
+                        if (kbData.graph_nodes && kbData.graph_edges) {
+                            if (kbData.graph_nodes.length > 0 || kbData.graph_edges.length > 0) {
+                                if(knowledgeGraphContainer) knowledgeGraphContainer.style.display = 'block';
+                                initOrUpdateGraph(kbData.graph_nodes, kbData.graph_edges);
+                            } else {
+                                if(knowledgeGraphContainer) knowledgeGraphContainer.style.display = 'none';
+                                if (visNetwork) { visNetwork.setData({nodes: new vis.DataSet(), edges: new vis.DataSet()}); }
+                            }
+                        } else {
+                            if(knowledgeGraphContainer) knowledgeGraphContainer.style.display = 'none';
+                            if (visNetwork) { visNetwork.setData({nodes: new vis.DataSet(), edges: new vis.DataSet()}); }
+                        }
+
+                    } catch (error) {
+                        console.error('Error during AI or KB fetch:', error);
+                        if(answerSpinnerContainer) answerSpinnerContainer.style.display = 'none';
+                        appendMessageToChat('system', `处理请求时发生错误: ${error.message}`);
+                        
+                        if(kbResultsContainer) kbResultsContainer.style.display = 'none';
+                        if(knowledgeGraphContainer) knowledgeGraphContainer.style.display = 'none';
+                    }
+                });
+            } else {
+                console.error("QA Form with ID 'qaForm' not found.");
+            }
+
+            var initialGraphNodesJsonStr = '{{ graph_nodes_json|default_if_none:"[]"|escapejs }}';
+            var initialGraphEdgesJsonStr = '{{ graph_edges_json|default_if_none:"[]"|escapejs }}';
+            var initialGraphNodes = JSON.parse(initialGraphNodesJsonStr);
+            var initialGraphEdges = JSON.parse(initialGraphEdgesJsonStr);
+            if (initialGraphNodes && initialGraphEdges && (initialGraphNodes.length > 0 || initialGraphEdges.length > 0)) {
+                if(knowledgeGraphContainer) knowledgeGraphContainer.style.display = 'block';
+                initOrUpdateGraph(initialGraphNodes, initialGraphEdges);
+            } else { // Ensure graph container is hidden if no initial data
+                 if(knowledgeGraphContainer) knowledgeGraphContainer.style.display = 'none';
+            }
+        });
+    </script>
+{% endblock %} 

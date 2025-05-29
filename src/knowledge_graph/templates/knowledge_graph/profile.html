@@ -1,0 +1,79 @@
+{% extends "knowledge_graph/base.html" %}
+
+{% block title %}用户个人中心 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="qa-container">
+        <h1 class="section-title">用户个人中心</h1>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if current_user.is_authenticated %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>你好, {{ current_user.username }}!</h3>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>用户名:</strong> {{ current_user.username }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>姓名:</strong> 
+                        {% if current_user.first_name %}{{ current_user.first_name }}{% endif %}
+                        {% if current_user.last_name %} {{ current_user.last_name }}{% endif %}
+                        {% if not current_user.first_name and not current_user.last_name %}未设置{% endif %}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>电子邮箱:</strong> {{ current_user.email|default:"未设置" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>加入日期:</strong> {{ current_user.date_joined|date:"Y年m月d日 H:i" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>上次登录:</strong> {{ current_user.last_login|date:"Y年m月d日 H:i" }}
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 编辑资料表单 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>编辑资料</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'profile' %}">
+                        {% csrf_token %}
+                        {{ profile_form.as_p }}
+                        <button type="submit" name="update_profile" class="btn btn-primary">保存资料</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 修改密码表单 -->
+            <div class="card">
+                <div class="card-header">
+                    <h4>修改密码</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'profile' %}">
+                        {% csrf_token %}
+                        {{ password_form.as_p }}
+                        <button type="submit" name="change_password" class="btn btn-primary">修改密码</button>
+                    </form>
+                </div>
+            </div>
+
+        {% else %}
+            <p class="alert alert-warning">您需要先登录才能查看个人中心。</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

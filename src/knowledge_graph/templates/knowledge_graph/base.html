@@ -1,0 +1,222 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}人工智能导论知识图谱{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font Roboto (example) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Vis.js CSS (if needed on all pages, otherwise include in specific templates) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Your Custom Global CSS (if you have one) -->
+    <!-- <link rel="stylesheet" href="{% static 'css/custom_global.css' %}"> -->
+
+    <style>
+        body {
+            padding-top: 70px; /* For fixed navbar */
+            background-color: #eef7ff; /* 非常浅的蓝色背景，或者 #f0f8ff (AliceBlue) */
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+        }
+
+        /* 导航栏样式 - 浅蓝色主题 */
+        .navbar {
+            background-color: #007bff; /* Bootstrap 主蓝色作为导航栏背景 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #ffffff !important; /* 白色品牌文字 */
+        }
+        .nav-link {
+            color: #f8f9fa !important; /* 浅色导航链接文字 (接近白色但略有差别) */
+            margin-right: 10px;
+            transition: color 0.2s ease-in-out;
+        }
+        .nav-link:hover, .nav-link:focus {
+            color: #ffffff !important; /* 悬停时纯白色 */
+        }
+        .nav-item.active .nav-link { /* 活动导航链接 */
+            color: #ffffff !important;
+            font-weight: 500;
+            /* text-decoration: underline; 可选：给活动链接加下划线 */
+        }
+        /* Navbar toggler icon for dark background */
+        .navbar-toggler {
+            border-color: rgba(255,255,255,0.5);
+        }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 0.8)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+        }
+
+
+        .qa-container {
+            background-color: #fff; /* 内容区域保持白色以保证可读性 */
+            padding: 25px;
+            border-radius: 8px; /* 可以减小圆角如果你喜欢更锐利的外观 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 保留一些阴影 */
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 20px;
+            color: #0056b3; /* 深蓝色标题，与浅蓝背景形成对比 */
+            border-bottom: 2px solid #007bff; /* 主蓝色下划线 */
+            padding-bottom: 8px;
+            font-weight: 500;
+        }
+
+        /* 按钮样式 - 配合浅蓝主题 */
+        .btn-primary {
+            background-color: #007bff; /* 主蓝色按钮 */
+            border-color: #007bff;
+            color: #fff;
+            border-radius: 20px; /* Pill-shaped, 你可以改成 4px 或 6px 如果不喜欢药丸状 */
+            padding: 10px 20px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3; /* 深一点的蓝色 */
+            border-color: #0056b3;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+        }
+        
+        /* 登出按钮 (在导航栏中) */
+        /* 在上面的 <nav> HTML中，登出按钮class可以是 "btn btn-light btn-sm" 或 "btn btn-outline-light btn-sm" */
+        /* 如果 base.html 中 nav 标签有 navbar-dark class，则 .navbar-text 也应该设置为浅色 */
+        .navbar-text {
+            color: rgba(255,255,255,0.85) !important; /* 确保 "你好, 用户" 也是浅色 */
+        }
+        .navbar .btn-outline-light { /* 确保 outline-light 在深色背景上是亮的 */
+            color: #f8f9fa;
+            border-color: #f8f9fa;
+        }
+        .navbar .btn-outline-light:hover {
+            color: #007bff; /* 悬停时文字变蓝 */
+            background-color: #f8f9fa; /* 背景变亮 */
+        }
+
+
+        /* 其他组件（如 answer-box, form-control）可以保持之前的样式，或者微调以适应新的主色调 */
+        .answer-box {
+            background-color: #e9f7fd; /* 保持或调整为更匹配的浅蓝 */
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 5px solid #007bff; /* 主蓝色左边框 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .form-control {
+            border-radius: 6px; /* 稍微调整圆角 */
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #ced4da;
+        }
+        .form-control:focus {
+            border-color: #80bdff; /* 焦点时用浅蓝色高亮 */
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05), 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+
+        /* Vis.js tooltip - 可以保持深色，或者调整为浅色背景 */
+        div.vis-tooltip {
+            background-color: #343a40; 
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            color: #fff;
+            font-family: 'Roboto', sans-serif;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-width: 350px;
+        }
+
+        /* ... (你可能需要的其他全局样式) ... */
+    </style>
+    {% block extra_head %}{% endblock %} <!-- For page-specific CSS or meta tags -->
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top"> <!-- 移除了 navbar-dark 或 navbar-light，具体样式在 style 中定义 -->
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">AI课程知识图谱</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'home' %}">问答与图谱</a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'knowledge_list' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'knowledge_list' %}">知识总览</a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'study_note_list' or request.resolver_match.url_name == 'study_note_detail' or request.resolver_match.url_name == 'study_note_create' or request.resolver_match.url_name == 'study_note_update' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'study_note_list' %}">学习笔记</a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'about' %}">关于本系统</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
+                                你好, {{ user.username }}!
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-light btn-sm">登出</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item {% if request.resolver_match.url_name == 'login' %}active{% endif %}">
+                            <a class="nav-link" href="{% url 'login' %}">登录</a>
+                        </li>
+                        <li class="nav-item {% if request.resolver_match.url_name == 'register' %}active{% endif %}">
+                            <a class="nav-link" href="{% url 'register' %}">注册</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-3 mb-3 main-content-area"> <!-- Main content area -->
+        {% block content %}
+        <!-- Page-specific content will go here -->
+        {% endblock %}
+    </div>
+
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">&copy; {% now "Y" %} 《人工智能导论》课程知识图谱管理系统. All rights reserved.</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS and dependencies (jQuery, Popper.js) -->
+    <!-- These are often placed at the end of the body for faster page loading -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <!-- Vis.js (if needed on all pages, otherwise include in specific templates) -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    {% block extra_scripts %}{% endblock %} <!-- For page-specific JavaScript -->
+
+</body>
+</html> 

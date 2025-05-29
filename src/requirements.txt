@@ -1,0 +1,11 @@
+Django==4.2.21
+dashscope==1.23.3
+requests==2.32.3
+Pillow==11.2.1
+django-ckeditor==6.7.2
+django-js-asset==2.2.0
+django-taggit==6.1.0
+django-widget-tweaks==1.5.0
+sqlparse==0.5.3
+asgiref==3.8.1
+tzdata==2025.2

@@ -1,0 +1,54 @@
+{% extends "knowledge_graph/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ note.title }} (公开笔记) - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">首页</a></li>
+            <li class="breadcrumb-item active" aria-current="page">公开笔记: {{ note.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h1 class="section-title mb-0">{{ note.title }}</h1>
+            <!-- 不显示编辑/删除按钮给公众 -->
+        </div>
+        <div class="card-body">
+            <p class="card-text"><small class="text-muted">作者: {{ note.user.username }} | 最后更新: {{ note.updated_at|date:"Y年m月d日 H:i" }}</small></p>
+            
+            {% if note.related_knowledge_item %}
+                <p class="card-text">
+                    <strong>关联知识点:</strong> 
+                    <a href="{% url 'home' %}?q={{ note.related_knowledge_item.name|urlencode }}">{{ note.related_knowledge_item.name }}</a>
+                </p>
+            {% endif %}
+            {% if note.tags.all %}
+                <p class="card-text">
+                    <strong>标签:</strong>
+                    {% for tag in note.tags.all %}
+                        <span class="badge badge-info mr-1">{{ tag.name }}</span>
+                    {% endfor %}
+                </p>
+            {% endif %}
+            <hr>
+            <div class="note-content">
+                {{ note.content|safe }}
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            创建时间: {{ note.created_at|date:"Y年m月d日 H:i" }}
+            {% if request.user.is_authenticated and request.user == note.user %}
+             | <a href="{% url 'study_note_detail' pk=note.pk %}">管理我的笔记</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'home' %}" class="btn btn-secondary">返回首页</a>
+    </div>
+</div>
+{% endblock %} 

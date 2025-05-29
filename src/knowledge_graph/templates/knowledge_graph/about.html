@@ -1,0 +1,359 @@
+{% extends "knowledge_graph/base.html" %}
+
+{% block title %}关于本系统 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="qa-container"> <!-- Reusing qa-container for consistent styling -->
+        <h1 class="section-title">关于《人工智能导论》课程知识图谱管理系统</h1>
+        
+        <p class="lead">
+            欢迎使用《人工智能导论》课程知识图谱管理系统！
+        </p>
+        
+        <p>
+            本系统旨在通过可视化的知识图谱、智能问答以及个性化学习笔记等功能，帮助用户更深入、高效地理解和学习《人工智能导论》课程中的核心概念、理论及其相互关系。
+        </p>
+        <p>用户可以通过本系统进行以下操作：</p>
+        <ul>
+            <li><strong>知识问答与图谱探索：</strong> 在首页输入感兴趣的知识点或问题，系统将展示相关的知识内容，并通过交互式图谱显示其在知识网络中的位置和联系。您可以点击图谱中的节点以探索更多关联知识。同时，系统还会展示与该知识点相关的公开学习笔记和您自己的相关笔记。</li>
+            <li><strong>知识总览：</strong> 通过"知识总览"页面，您可以系统地查看课程中所有已录入的知识点分类及其下的具体知识条目，方便地跳转到感兴趣的内容。</li>
+            <li><strong>学习笔记管理：</strong> 创建、编辑、查看和删除您的个人学习笔记。笔记支持富文本编辑、标签分类、设置公开或私有，并可以关联到具体的知识点。公开笔记可以通过唯一链接分享。</li>
+            <li><strong>智能问答助手：</strong> 在"智能助手"页面，您可以与集成通义千问的AI助手进行对话。助手可以回答您关于人工智能领域的问题，并且在回答时能够参考您已有的相关学习笔记，提供更个性化的解答。</li>
+            <li><strong>个人中心：</strong> 管理您的个人信息，包括编辑姓名、邮箱以及修改登录密码。</li>
+        </ul>
+
+        <h4 class="mt-4">主要功能特色</h4>
+        <ul>
+            <li><strong>交互式知识图谱：</strong> 可视化展示知识点及其关联，支持点击节点动态加载邻居节点。</li>
+            <li><strong>智能检索：</strong> 基于关键词的知识点检索，支持多词AND逻辑及结果高亮。</li>
+            <li><strong>结构化浏览：</strong> 清晰的"知识总览"页面，方便用户按层级浏览知识体系。</li>
+            <li><strong>用户系统：</strong>完善的用户注册、登录、登出及个人资料管理（包括密码修改）。</li>
+            <li><strong>学习笔记：</strong>
+                <ul>
+                    <li>支持富文本编辑 (CKEditor)。</li>
+                    <li>标签化管理 (django-taggit)。</li>
+                    <li>公开/私有笔记及分享链接。</li>
+                    <li>笔记与知识点双向关联。</li>
+                    <li>笔记列表支持分页和按公开/私有筛选。</li>
+                </ul>
+            </li>
+            <li><strong>AI智能问答：</strong>
+                <ul>
+                    <li>集成阿里云通义千问大模型。</li>
+                    <li>支持流式输出，提升交互体验。</li>
+                    <li>能够结合用户的相关学习笔记进行个性化应答。</li>
+                </ul>
+            </li>
+            <li><strong>API支持：</strong> 提供知识库搜索API及图谱节点邻居查询API。</li>
+        </ul>
+
+        <h4 class="mt-4">数据来源</h4>
+        <p>
+            本系统当前的知识数据主要来源于 <code>人工智能导论-课程知识点.csv</code> 文件。我们致力于不断完善和扩充知识库。
+        </p>
+
+        <h4 class="mt-4">技术栈</h4>
+        <p>
+            本系统主要基于以下技术构建：
+        </p>
+        <ul>
+            <li><strong>后端：</strong> Python 3.x, Django Web框架 (包括 Django REST framework)</li>
+            <li><strong>前端：</strong> HTML5, CSS3, JavaScript (ES6+), Bootstrap (版本可能是4.x，需确认)</li>
+            <li><strong>知识图谱可视化：</strong> Vis.js</li>
+            <li><strong>富文本编辑器：</strong> CKEditor (django-ckeditor-uploader)</li>
+            <li><strong>标签系统：</strong> django-taggit</li>
+            <li><strong>大模型集成：</strong> 阿里云 DashScope SDK (通义千问)</li>
+            <li><strong>数据库：</strong> SQLite (Django默认，可轻松配置为 PostgreSQL, MySQL 等)</li>
+            <li><strong>版本控制：</strong> Git</li>
+        </ul>
+
+        <!-- <h4 class="mt-4">开发者</h4>
+        <p>
+            本系统由 <strong>杨明虎</strong> 独立开发。
+        </p> -->
+        
+        <h4 class="mt-4">版本历史</h4>
+        <div class="accordion" id="versionHistoryAccordion">
+            <!-- 版本 1.3.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_1_3_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse_1_3_0" aria-expanded="true" aria-controls="collapse_1_3_0">
+                            版本 1.3.0 (2025年5月23日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_1_3_0" class="collapse show" aria-labelledby="heading_1_3_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>全面更新"关于本系统"页面内容，详细记录所有功能模块、技术栈和完整的版本历史。</li>
+                            <li>系统整体测试与BUG修复。</li>
+                            <li>最终代码审查和文档整理。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 1.2.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_1_2_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_1_2_0" aria-expanded="false" aria-controls="collapse_1_2_0">
+                            版本 1.2.0 (2025年5月19日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_1_2_0" class="collapse" aria-labelledby="heading_1_2_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>优化："智能问答助手"能够检索并参考用户已有的相关学习笔记，提供更具个性化的回复。</li>
+                            <li>优化：首页知识问答功能增强，在展示核心知识点和图谱的同时，补充展示相关的公开学习笔记和用户自己的匹配笔记。</li>
+                            <li>UI/UX：针对新增模块（学习笔记、智能助手）进行界面适配和体验优化。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 1.1.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_1_1_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_1_1_0" aria-expanded="false" aria-controls="collapse_1_1_0">
+                            版本 1.1.0 (2025年5月13日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_1_1_0" class="collapse" aria-labelledby="heading_1_1_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>新增："智能问答助手"页面 (<code>qwen_chat_view</code>)，集成阿里云通义千问大模型。</li>
+                            <li>实现与大模型的流式对话交互，提升用户体验。</li>
+                            <li>新增：独立的知识库搜索API端点 (<code>/api/kb_search/</code>)，供外部或异步调用。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 1.0.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_1_0_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_1_0_0" aria-expanded="false" aria-controls="collapse_1_0_0">
+                            版本 1.0.0 (2025年5月5日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_1_0_0" class="collapse" aria-labelledby="heading_1_0_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>完善"学习笔记"模块：
+                                <ul>
+                                    <li>实现笔记的详情查看、编辑、删除功能。</li>
+                                    <li>集成 <code>django-taggit</code> 实现标签功能，支持按标签筛选笔记。</li>
+                                    <li>实现笔记公开/私有切换及公开笔记的分享链接功能 (<code>public_note_view</code>)。</li>
+                                    <li>在笔记表单中添加关联知识点的选择。</li>
+                                    <li>笔记列表页实现分页和按公开/私有状态筛选。</li>
+                                </ul>
+                            </li>
+                            <li>优化：调整知识图谱加载指示器，使其显示在左上角且加载时间极短。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 版本 0.9.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_9_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_9_0" aria-expanded="false" aria-controls="collapse_0_9_0">
+                            版本 0.9.0 (2025年4月25日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_9_0" class="collapse" aria-labelledby="heading_0_9_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>新增："关于本系统"页面 (<code>about.html</code>, <code>about_view</code>)，初步包含系统介绍、技术栈和版本历史。</li>
+                            <li>新增："学习笔记"模块基础框架：
+                                <ul>
+                                    <li>定义 <code>StudyNote</code> 模型，包含标题、内容(CKEditor)、用户、标签、公开状态、关联知识点等字段。</li>
+                                    <li>实现笔记的创建 (<code>study_note_create_view</code>, <code>StudyNoteForm</code>) 和列表展示 (<code>study_note_list_view</code>)。</li>
+                                </ul>
+                            </li>
+                            <li>修复：解决了知识图谱问答页面图谱展示区域过小的问题。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.8.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_8_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_8_0" aria-expanded="false" aria-controls="collapse_0_8_0">
+                            版本 0.8.0 (2025年4月10日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_8_0" class="collapse" aria-labelledby="heading_0_8_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>新增："用户个人中心"页面 (<code>profile.html</code>, <code>profile_view</code>)，允许用户查看个人信息，并实现编辑姓名、邮箱的功能。</li>
+                            <li>新增：用户个人中心实现修改密码功能，使用 Django 内置 <code>PasswordChangeForm</code>。</li>
+                            <li>UI整体风格提升：选择新的主色调 (青蓝色 <code>#20c997</code>)，统一导航栏、按钮、表单控件样式，增加悬停效果。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.7.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_7_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_7_0" aria-expanded="false" aria-controls="collapse_0_7_0">
+                            版本 0.7.0 (2025年3月28日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_7_0" class="collapse" aria-labelledby="heading_0_7_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>修复：解决了点击图谱节点加载邻居时，"正在加载图谱"指示器卡住或不消失的问题。</li>
+                            <li>优化：对知识图谱可视化进一步微调，包括边的样式、节点颜色和交互提示。</li>
+                            <li>优化：搜索结果列表按名称排序。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.6.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_6_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_6_0" aria-expanded="false" aria-controls="collapse_0_6_0">
+                            版本 0.6.0 (2025年3月15日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_6_0" class="collapse" aria-labelledby="heading_0_6_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>新增："知识总览"页面 (<code>knowledge_list.html</code>, <code>knowledge_list_view</code>)，允许用户按分类层级浏览所有知识点。</li>
+                            <li>UI初步美化：引入Bootstrap框架，对登录、注册、首页、知识总览页面进行基础样式统一。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.5.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_5_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_5_0" aria-expanded="false" aria-controls="collapse_0_5_0">
+                            版本 0.5.0 (2025年3月3日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_5_0" class="collapse" aria-labelledby="heading_0_5_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>优化：图谱节点工具提示 (tooltip) 中显示更详细的结构化信息 (ID, 类型, 名称, 父分类, 子节点数, 内容摘要)。</li>
+                            <li>优化：首页搜索结果中的答案内容高亮显示匹配的关键词。</li>
+                            <li>修复：解决了Django模板加载、CSS静态文件等初期问题。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.4.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_4_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_4_0" aria-expanded="false" aria-controls="collapse_0_4_0">
+                            版本 0.4.0 (2025年2月20日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_4_0" class="collapse" aria-labelledby="heading_0_4_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>优化知识图谱展示：以查询结果为中心，显示更完整的星状结构（父、子、M2M关联节点）。</li>
+                            <li>实现图谱节点点击动态加载邻居节点功能 (API <code>/api/node_neighbors/&lt;int:node_id&gt;/</code> 和前端JS交互)。</li>
+                            <li>优化：改进搜索逻辑，支持多关键词AND查询。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.3.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_3_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_3_0" aria-expanded="false" aria-controls="collapse_0_3_0">
+                            版本 0.3.0 (2025年2月10日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_3_0" class="collapse" aria-labelledby="heading_0_3_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>实现首页基本知识点问答功能：用户输入查询词，系统展示匹配的知识点名称和内容。</li>
+                            <li>初步实现知识图谱可视化 (Vis.js)：展示查询到的知识点及其直接父节点和子节点。</li>
+                            <li>定义了节点的基本样式（分类、知识点）。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.2.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_2_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_2_0" aria-expanded="false" aria-controls="collapse_0_2_0">
+                            版本 0.2.0 (2025年1月30日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_2_0" class="collapse" aria-labelledby="heading_0_2_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>完成用户注册与登录后端逻辑，包括表单处理和用户会话管理。</li>
+                            <li>初步实现CSV数据导入功能 (management command <code>import_knowledge_data.py</code>)，将 <code>人工智能导论-课程知识点.csv</code> 数据导入 <code>KnowledgeItem</code> 模型。</li>
+                            <li>创建基础首页 (<code>home.html</code>)，为后续问答功能做准备。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版本 0.1.0 -->
+            <div class="card">
+                <div class="card-header" id="heading_0_1_0">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse_0_1_0" aria-expanded="false" aria-controls="collapse_0_1_0">
+                            版本 0.1.0 (2025年1月20日)
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_0_1_0" class="collapse" aria-labelledby="heading_0_1_0" data-parent="#versionHistoryAccordion">
+                    <div class="card-body">
+                        <ul>
+                            <li>项目初始化，基于Django框架。</li>
+                            <li>定义初步的知识点数据模型 (<code>KnowledgeItem</code>)。</li>
+                            <li>创建基础的用户注册与登录页面骨架 (<code>register.html</code>, <code>login.html</code>) 及视图 (<code>register_view</code>, <code>login_view</code>, <code>logout_view</code>)。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="mt-3">
+            当前版本: <strong id="currentVersionDisplay">1.3.0</strong>
+        </p>
+
+        <hr>
+        <p class="text-muted">
+            如果您在使用过程中遇到任何问题，或有任何建议，欢迎与我们联系。
+        </p>
+    </div>
+</div>
+{% endblock %} 

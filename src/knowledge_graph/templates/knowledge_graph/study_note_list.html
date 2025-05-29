@@ -1,0 +1,122 @@
+{% extends "knowledge_graph/base.html" %}
+
+{% block title %}我的学习笔记 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="section-title">{{ page_title|default:"我的学习笔记" }}</h1>
+        {% if not tag %} {# 只有在不是标签筛选视图时才显示创建按钮 #}
+            <a href="{% url 'study_note_create' %}" class="btn btn-primary">创建新笔记</a>
+        {% else %}
+            <a href="{% url 'study_note_list' %}" class="btn btn-secondary">查看所有笔记</a>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <div class="btn-group" role="group" aria-label="Visibility filter">
+            <a href="{% url 'study_note_list' %}{% if tag %}tag/{{ tag.slug }}/{% endif %}?visibility=all" 
+               class="btn btn-outline-primary {% if current_visibility_filter == 'all' %}active{% endif %}">全部笔记</a>
+            <a href="{% url 'study_note_list' %}{% if tag %}tag/{{ tag.slug }}/{% endif %}?visibility=public" 
+               class="btn btn-outline-success {% if current_visibility_filter == 'public' %}active{% endif %}">公开笔记</a>
+            <a href="{% url 'study_note_list' %}{% if tag %}tag/{{ tag.slug }}/{% endif %}?visibility=private" 
+               class="btn btn-outline-secondary {% if current_visibility_filter == 'private' %}active{% endif %}">私有笔记</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if notes_page.object_list %}
+        <div class="list-group">
+            {% for note in notes_page %}
+                <a href="{% url 'study_note_detail' pk=note.pk %}" class="list-group-item list-group-item-action flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">
+                            {{ note.title }}
+                            {% if note.is_public %}
+                                <span class="badge bg-success ms-2">公开</span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2">私有</span>
+                            {% endif %}
+                        </h5>
+                        <small>{{ note.updated_at|date:"Y年m月d日 H:i" }}</small>
+                    </div>
+                    <p class="mb-1">{{ note.content|truncatewords_html:20|safe }}</p>
+                    <small>
+                        最后更新于: {{ note.updated_at|timesince }}前
+                        {% if note.related_knowledge_item %}
+                            | 关联知识点: {{ note.related_knowledge_item.name }}
+                        {% endif %}
+                        {% if note.tags.all %}
+                            | 标签: 
+                            {% for tag in note.tags.all %}
+                                <a href="{% url 'study_note_list_by_tag' tag_slug=tag.slug %}" class="badge text-bg-info me-1">{{ tag.name }}</a>{% comment %}{% if not forloop.last %}, {% endif %}{% endcomment %}
+                            {% endfor %}
+                        {% endif %}
+                    </small>
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if notes_page.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if notes_page.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notes_page.previous_page_number }}{% if current_visibility_filter != 'all' %}&visibility={{ current_visibility_filter }}{% endif %}{% if tag %}&tag={{ tag.slug }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                    {% endif %}
+
+                    {% for i in notes_page.paginator.page_range %}
+                        {% if notes_page.number == i %}
+                            <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+                        {% elif i > notes_page.number|add:'-3' and i < notes_page.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ i }}{% if current_visibility_filter != 'all' %}&visibility={{ current_visibility_filter }}{% endif %}{% if tag %}&tag={{ tag.slug }}{% endif %}">{{ i }}</a></li>
+                        {% elif i == notes_page.paginator.page_range.0 or i == notes_page.paginator.page_range|last %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if notes_page.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notes_page.next_page_number }}{% if current_visibility_filter != 'all' %}&visibility={{ current_visibility_filter }}{% endif %}{% if tag %}&tag={{ tag.slug }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            {% if current_visibility_filter == 'public' %}
+                你还没有公开的学习笔记。
+            {% elif current_visibility_filter == 'private' %}
+                你还没有私有的学习笔记。
+            {% elif tag %}
+                在 "{{ tag.name }}" 标签下没有找到学习笔记。
+            {% else %}
+                你还没有创建任何学习笔记。 <a href="{% url 'study_note_create' %}" class="alert-link">现在就创建一个吧！</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

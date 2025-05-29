@@ -1,0 +1,78 @@
+{% extends "knowledge_graph/base.html" %}
+
+{% block title %}{{ action }}学习笔记 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'study_note_list' %}">我的学习笔记</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ action }}笔记</li>
+        </ol>
+    </nav>
+
+    <h1 class="section-title">{{ action }}学习笔记</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.media }} {# For widgets like RichTextEditor if you add one #}
+        
+        <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.title.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.content.id_for_label }}" class="form-label">{{ form.content.label }}</label>
+            {{ form.content }}
+            {% if form.content.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.content.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <label for="{{ form.related_knowledge_item.id_for_label }}" class="form-label">{{ form.related_knowledge_item.label }}</label>
+            {{ form.related_knowledge_item }}
+            {% if form.related_knowledge_item.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.related_knowledge_item.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+            <div class="form-text">选择一个相关的知识点 (可选)。</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.tags.id_for_label }}" class="form-label">{{ form.tags.label }}</label>
+            {{ form.tags }}
+            {% if form.tags.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.tags.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+            {% if form.tags.help_text %}
+                <div class="form-text">{{ form.tags.help_text }}</div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3 form-check">
+            {{ form.is_public }}
+            <label class="form-check-label" for="{{ form.is_public.id_for_label }}">{{ form.is_public.label }}</label>
+            {% if form.is_public.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.is_public.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">保存笔记</button>
+        <a href="{% if note %}{% url 'study_note_detail' pk=note.pk %}{% else %}{% url 'study_note_list' %}{% endif %}" class="btn btn-secondary">取消</a>
+    </form>
+</div>
+{% endblock %} 

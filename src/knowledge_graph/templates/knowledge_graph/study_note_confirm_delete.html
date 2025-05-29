@@ -1,0 +1,28 @@
+{% extends "knowledge_graph/base.html" %}
+
+{% block title %}确认删除学习笔记 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'study_note_list' %}">我的学习笔记</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'study_note_detail' pk=note.pk %}">{{ note.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">确认删除</li>
+        </ol>
+    </nav>
+
+    <h1 class="section-title">确认删除学习笔记</h1>
+
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">你确定要删除学习笔记 "{{ note.title }}" 吗？</h4>
+        <p>此操作无法撤销。笔记内容将会被永久删除。</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">是的，删除笔记</button>
+        <a href="{% url 'study_note_detail' pk=note.pk %}" class="btn btn-secondary">取消</a>
+    </form>
+</div>
+{% endblock %} 

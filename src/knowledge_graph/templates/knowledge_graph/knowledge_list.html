@@ -1,0 +1,63 @@
+{% extends "knowledge_graph/base.html" %}
+
+{% block title %}知识点列表 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 section-title">知识点总览</h1>
+
+    {% if structured_knowledge %}
+        <div class="accordion" id="knowledgeAccordion">
+            {% for category in structured_knowledge %}
+                <div class="card qa-container mb-3">
+                    <div class="card-header" id="heading{{ category.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse{{ category.id }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ category.id }}">
+                                {{ category.name }}
+                                <span class="badge badge-secondary float-right">{{ category.sub_items|length }} 项</span>
+                            </button>
+                        </h2>
+                        {% if category.content %}
+                            <small class="text-muted ml-3">{{ category.content|truncatewords:30 }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div id="collapse{{ category.id }}" class="collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ category.id }}" data-parent="#knowledgeAccordion">
+                        <div class="card-body">
+                            {% if category.sub_items %}
+                                <ul class="list-group list-group-flush">
+                                    {% for item in category.sub_items %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>
+                                                    <a href="{% url 'home' %}?q={{ item.name|urlencode }}">{{ item.name }}</a>
+                                                </strong>
+                                                <small class="text-muted ml-2">({{ item.item_type }})</small>
+                                                {% if item.content_summary %}
+                                                    <p class="mb-0 mt-1 text-muted"><small>{{ item.content_summary }}</small></p>
+                                                {% endif %}
+                                            </div>
+                                            <a href="{% url 'home' %}?q={{ item.name|urlencode }}" class="btn btn-sm btn-outline-primary">查看图谱</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted">该分类下暂无子项。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            目前知识库中还没有顶层分类。
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_scripts %}
+    {{ block.super }}
+{% endblock %}
+
+{% endblock %} 
